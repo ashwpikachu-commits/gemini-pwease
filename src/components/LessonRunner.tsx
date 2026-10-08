@@ -25,6 +25,7 @@ import {
 } from "@/lib/lessonGenerator";
 import type { StudySessionInput } from "@/lib/types";
 import { logMissedQuestions } from "@/lib/missedQuestions";
+import { formatDuration } from "@/lib/duration";
 
 interface Props {
   day: DayCurriculum;
@@ -36,15 +37,59 @@ interface Props {
   missedKeys?: string[];
   selectedDays?: number[];
   questionCount?: number;
+  onAddPractice?: (input: {
+    student_id: string;
+    topic: string;
+    score: number;
+    accuracy_pct: number;
+    duration_seconds: number;
+    days_included: string;
+    question_count: number;
+  }) => Promise<void>;
+  onAddTest?: (input: {
+    student_id: string;
+    test_number: number;
+    topic: string;
+    score: number;
+    accuracy_pct: number;
+    duration_seconds: number;
+    question_count: number;
+  }) => Promise<void>;
 }
 
 type Phase = "intro1" | "intro2" | "active" | "results" | "review";
 
-function speak(text: string) {
+let audioCtx: AudioContext | null = null;
+
+function getAudioContext(): AudioContext | null {
+  if (typeof window === "undefined") return null;
+  if (!audioCtx) {
+    try {
+      audioCtx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+    } catch {
+      return null;
+    }
+  }
+  return audioCtx;
+}
+
+function speak(text: string, boost = false) {
   if (!("speechSynthesis" in window)) return;
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = "ja-JP";
   utterance.rate = 0.8;
+  if (boost) {
+    const ctx = getAudioContext();
+    if (ctx) {
+      try {
+        const gainNode = ctx.createGain();
+        gainNode.gain.value = 1.8;
+        utterance.volume = 1;
+      } catch {
+        // fallback to default volume
+      }
+    }
+  }
   window.speechSynthesis.cancel();
   window.speechSynthesis.speak(utterance);
 }
@@ -53,7 +98,7 @@ function normalizeRomaji(text: string): string {
   return text.trim().toLowerCase().replace(/\s+/g, "");
 }
 
-export default function LessonRunner({ day, studentId, onAdd, onExit, onComplete, isPractice, missedKeys, selectedDays, questionCount }: Props) {
+export default function LessonRunner({ day, studentId, onAdd, onExit, onComplete, isPractice, missedKeys, selectedDays, questionCount, onAddPractice, onAddTest }: Props) {
   const isTestMode = Boolean(day.isRegularTest);
   const [phase, setPhase] = useState<Phase>(isTestMode ? "active" : "intro1");
   const [questions, setQuestions] = useState<LessonQuestion[]>([]);
@@ -91,9 +136,8 @@ export default function LessonRunner({ day, studentId, onAdd, onExit, onComplete
     setRomajiInputSubmitted(false);
     startTimeRef.current = Date.now();
     setPhase("active");
-  }, [day]);
+  }, [day, isPractice, questionCount, missedKeys, selectedDays]);
 
-  // For test mode, generate questions immediately
   useEffect(() => {
     if (isTestMode && questions.length === 0 && phase === "active") {
       startQuiz();
@@ -104,8 +148,8 @@ export default function LessonRunner({ day, studentId, onAdd, onExit, onComplete
 
   const result = useMemo(() => {
     if (phase !== "results" && phase !== "review") return null;
-    return scoreLesson(questions, firstAttemptAnswers);
-  }, [phase, questions, firstAttemptAnswers]);
+    return scoreLesson(questions, firstAttemptAnswers, skippedListening);
+  }, [phase, questions, firstAttemptAnswers, skippedListening]);
 
   const handleSelect = useCallback(
     (choiceIndex: number) => {
@@ -118,6 +162,10 @@ export default function LessonRunner({ day, studentId, onAdd, onExit, onComplete
         return { ...prev, [q.id]: choiceIndex };
       });
       setAnswers((prev) => ({ ...prev, [q.id]: choiceIndex }));
+      // Auto-play audio on answer for hiragana_romaji questions
+      if (q.type === "hiragana_romaji") {
+        speak(q.hiragana, true);
+      }
     },
     [showFeedback, current]
   );
@@ -196,7 +244,6 @@ export default function LessonRunner({ day, studentId, onAdd, onExit, onComplete
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentIdx, questions, firstAttemptAnswers, skippedListening]);
 
-  // Touch / swipe handling
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
 
@@ -220,23 +267,52 @@ export default function LessonRunner({ day, studentId, onAdd, onExit, onComplete
     [currentIdx, questions, showFeedback]
   );
 
-  // Auto-save results
+  // Auto-save results — route to correct table
   useEffect(() => {
     if (phase !== "results" || saved || submitting) return;
-    const r = scoreLesson(questions, firstAttemptAnswers);
+    const r = scoreLesson(questions, firstAttemptAnswers, skippedListening);
     setSubmitting(true);
-    logMissedQuestions(studentId, sessionIdRef.current, `Day ${day.day}: ${day.title}`, questions, firstAttemptAnswers);
-    onAdd({
-      student_id: studentId,
-      group_label: "B",
-      topic: isPractice ? `Practice: ${day.title}` : `Day ${day.day}: ${day.title}`,
-      score: r.sm2Score,
-      accuracy_pct: Math.round(r.percentage),
-      duration_seconds: durationRef.current,
-    })
-      .then(() => { setSaved(true); setSubmitting(false); })
-      .catch(() => { setSubmitting(false); });
-  }, [phase, saved, submitting, questions, firstAttemptAnswers, onAdd, studentId, day]);
+    const topicLabel = isPractice ? `Practice: ${day.title}` : `Day ${day.day}: ${day.title}`;
+    logMissedQuestions(studentId, sessionIdRef.current, topicLabel, questions, firstAttemptAnswers);
+
+    if (isPractice && onAddPractice) {
+      onAddPractice({
+        student_id: studentId,
+        topic: topicLabel,
+        score: r.sm2Score,
+        accuracy_pct: Math.round(r.percentage),
+        duration_seconds: durationRef.current,
+        days_included: selectedDays?.join(",") ?? "",
+        question_count: r.total,
+      })
+        .then(() => { setSaved(true); setSubmitting(false); })
+        .catch(() => { setSubmitting(false); });
+    } else if (isTestMode && onAddTest) {
+      const testNumber = Math.ceil(day.day / 2);
+      onAddTest({
+        student_id: studentId,
+        test_number: testNumber,
+        topic: `Regular Test ${testNumber}`,
+        score: r.sm2Score,
+        accuracy_pct: Math.round(r.percentage),
+        duration_seconds: durationRef.current,
+        question_count: r.total,
+      })
+        .then(() => { setSaved(true); setSubmitting(false); })
+        .catch(() => { setSubmitting(false); });
+    } else {
+      onAdd({
+        student_id: studentId,
+        group_label: "B",
+        topic: topicLabel,
+        score: r.sm2Score,
+        accuracy_pct: Math.round(r.percentage),
+        duration_seconds: durationRef.current,
+      })
+        .then(() => { setSaved(true); setSubmitting(false); })
+        .catch(() => { setSubmitting(false); });
+    }
+  }, [phase, saved, submitting, questions, firstAttemptAnswers, skippedListening, onAdd, onAddPractice, onAddTest, studentId, day, isPractice, isTestMode, selectedDays]);
 
   const progress = useMemo(() => {
     const answered = Object.keys(firstAttemptAnswers).length + skippedListening.size;
@@ -337,7 +413,6 @@ export default function LessonRunner({ day, studentId, onAdd, onExit, onComplete
             </table>
           </div>
 
-          {/* Grammar notes */}
           {day.grammarNotes.length > 0 && (
             <div className="mt-6 space-y-3">
               {day.grammarNotes.map((note, i) => (
@@ -352,7 +427,6 @@ export default function LessonRunner({ day, studentId, onAdd, onExit, onComplete
             </div>
           )}
 
-          {/* Sentences with ruby romaji and word tooltips */}
           {day.sentences.length > 0 && (
             <div className="mt-6">
               <h3 className="mb-3 text-sm font-semibold text-slate-700">Today's Sentences</h3>
@@ -381,10 +455,10 @@ export default function LessonRunner({ day, studentId, onAdd, onExit, onComplete
     const isSkipped = skippedListening.has(current.id);
     const showFeedbackForCurrent = showFeedback || (isReviewMode && currentIsAnswered);
     const disableHints = isTestMode;
+    const isHiraganaRomajiType = current.type === "hiragana_romaji";
 
     return (
       <div className="mx-auto flex min-h-[calc(100vh-2rem)] max-w-2xl flex-col" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
-        {/* Top bar */}
         <div className="flex items-center justify-between py-3">
           <button onClick={() => setShowExitConfirm(true)} className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm text-slate-500 transition hover:bg-slate-100 hover:text-slate-700">
             <ArrowLeft className="h-5 w-5" />
@@ -399,12 +473,10 @@ export default function LessonRunner({ day, studentId, onAdd, onExit, onComplete
           )}
         </div>
 
-        {/* Progress bar */}
         <div className="mb-4 h-2.5 overflow-hidden rounded-full bg-slate-200">
           <div className="h-full rounded-full bg-gradient-to-r from-teal-500 to-cyan-500 transition-all duration-300" style={{ width: `${progress}%` }} />
         </div>
 
-        {/* Question card */}
         <div className={`flex flex-1 flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-200 ${animDir === "left" ? "-translate-x-4 opacity-0" : animDir === "right" ? "translate-x-4 opacity-0" : "translate-x-0 opacity-100"}`}>
           <div className="mb-4 flex items-center gap-2">
             <span className="inline-flex items-center rounded-full bg-teal-100 px-2.5 py-1 text-xs font-semibold text-teal-700">{current.directionLabel}</span>
@@ -461,8 +533,11 @@ export default function LessonRunner({ day, studentId, onAdd, onExit, onComplete
             </div>
           ) : (
             <div className="mb-6 flex flex-col items-center gap-1 py-2">
-              <span className="text-xs font-normal text-slate-400">{current.romaji}</span>
-              <span className="text-4xl font-semibold text-slate-900">{current.hiragana}</span>
+              {/* Strict vertical ruby alignment: romaji directly above hiragana */}
+              <span className="inline-flex flex-col items-center" style={{ lineHeight: 1.2 }}>
+                <span className="text-xs text-slate-400">{current.romaji}</span>
+                <span className="text-4xl font-semibold text-slate-900">{current.hiragana}</span>
+              </span>
               {current.type === "translate_jp_en" || current.type === "sentence_jp_en" ? (
                 !disableHints && current.hintTooltip ? (
                   <WordTooltip text={current.hintTooltip} />
@@ -470,7 +545,8 @@ export default function LessonRunner({ day, studentId, onAdd, onExit, onComplete
               ) : (
                 <span className="text-sm text-slate-500">{current.english}</span>
               )}
-              {current.showAudio && <button onClick={() => speak(current.hiragana)} className="mt-2 inline-flex h-9 w-9 items-center justify-center rounded-full bg-teal-50 text-teal-600 transition hover:bg-teal-100"><Volume2 className="h-4 w-4" /></button>}
+              {/* Boosted audio for hiragana_romaji, normal for others */}
+              {current.showAudio && <button onClick={() => speak(current.hiragana, isHiraganaRomajiType)} className="mt-2 inline-flex h-9 w-9 items-center justify-center rounded-full bg-teal-50 text-teal-600 transition hover:bg-teal-100"><Volume2 className="h-4 w-4" /></button>}
             </div>
           )}
 
@@ -498,7 +574,7 @@ export default function LessonRunner({ day, studentId, onAdd, onExit, onComplete
             </div>
           )}
 
-          {/* Text choices (non-romaji-input) */}
+          {/* Text choices */}
           {current.type !== "image" && current.type !== "romaji_input" && (
             <div className="space-y-3">
               {current.choices.map((choice, i) => {
@@ -527,7 +603,6 @@ export default function LessonRunner({ day, studentId, onAdd, onExit, onComplete
             </div>
           )}
 
-          {/* Skip listening */}
           {current.type === "listen" && !showFeedbackForCurrent && !isReviewMode && (
             <button onClick={handleSkipListening} className="mt-4 inline-flex items-center gap-2 self-center text-sm text-slate-400 transition hover:text-slate-600">
               <VolumeX className="h-4 w-4" /> Can't listen right now
@@ -555,7 +630,7 @@ export default function LessonRunner({ day, studentId, onAdd, onExit, onComplete
           </div>
         )}
 
-        {/* Navigation buttons */}
+        {/* Navigation */}
         {!showFeedbackForCurrent && (
           <div className="flex items-center justify-between py-4">
             <button onClick={goPrev} disabled={currentIdx === 0} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 shadow-sm transition hover:bg-slate-50 disabled:opacity-40">
@@ -567,7 +642,6 @@ export default function LessonRunner({ day, studentId, onAdd, onExit, onComplete
           </div>
         )}
 
-        {/* Review mode navigation */}
         {isReviewMode && (
           <div className="flex items-center justify-between py-4">
             <button onClick={goPrev} disabled={currentIdx === 0} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 shadow-sm transition hover:bg-slate-50 disabled:opacity-40">
@@ -587,26 +661,23 @@ export default function LessonRunner({ day, studentId, onAdd, onExit, onComplete
 
   // ---------- RESULTS PHASE ----------
   if (phase === "results" && result) {
+    const heading = isTestMode ? "Test Complete!" : isPractice ? "Practice Complete!" : "Lesson Complete!";
     return (
       <div className="mx-auto max-w-2xl space-y-5">
         <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 text-white shadow-lg">
             <Trophy className="h-8 w-8" />
           </div>
-          <h2 className="text-xl font-bold text-slate-900">{isTestMode ? "Test Complete!" : "Lesson Complete!"}</h2>
+          <h2 className="text-xl font-bold text-slate-900">{heading}</h2>
           <p className="mt-1 text-sm text-slate-500">Day {day.day} · {day.title}</p>
-          <div className="mt-6 grid grid-cols-3 gap-3">
-            <div className="rounded-xl bg-slate-50 p-4">
-              <p className="text-2xl font-bold text-slate-900">{result.correct}/{result.total}</p>
-              <p className="text-xs text-slate-500">Correct</p>
-            </div>
-            <div className="rounded-xl bg-slate-50 p-4">
+          <div className="mt-6 grid grid-cols-2 gap-3 sm:mx-auto sm:max-w-md">
+            <div className="rounded-xl bg-slate-50 p-4 text-center">
               <p className="text-2xl font-bold text-slate-900">{Math.round(result.percentage)}%</p>
               <p className="text-xs text-slate-500">Accuracy</p>
             </div>
-            <div className="rounded-xl bg-slate-50 p-4">
-              <p className="text-2xl font-bold text-slate-900">{durationRef.current}s</p>
-              <p className="text-xs text-slate-500">Duration</p>
+            <div className="rounded-xl bg-slate-50 p-4 text-center">
+              <p className="text-2xl font-bold text-slate-900">{formatDuration(durationRef.current)}</p>
+              <p className="text-xs text-slate-500">Time taken</p>
             </div>
           </div>
           <div className="mt-4 rounded-lg bg-slate-50 px-4 py-3">
@@ -629,24 +700,23 @@ export default function LessonRunner({ day, studentId, onAdd, onExit, onComplete
   return null;
 }
 
-// ---------- SENTENCE DISPLAY WITH RUBY ROMAJI ----------
+// ---------- SENTENCE DISPLAY WITH STRICT RUBY ALIGNMENT ----------
 function SentenceDisplay({ sentence }: { sentence: SentenceItem }) {
   const segments = sentence.segments ?? [];
   return (
     <div className="rounded-xl border border-slate-100 bg-slate-50/50 px-4 py-3">
       <div className="flex items-start gap-3">
         <div className="flex-1">
-          {/* Ruby-style romaji over each segment */}
+          {/* Strict vertical ruby: each segment is inline-flex flex-col, centered */}
           <div className="flex flex-wrap gap-x-2 gap-y-1">
             {segments.map((seg, i) => (
-              <span key={i} className="ruby-segment inline-flex flex-col items-center">
+              <span key={i} className="inline-flex flex-col items-center" style={{ lineHeight: 1.2 }}>
                 <span className="text-xs text-slate-400">{seg.romaji}</span>
                 <span className="text-base font-semibold text-slate-900">{seg.hiragana}</span>
               </span>
             ))}
           </div>
           <p className="mt-1.5 text-sm text-slate-500">{sentence.english}</p>
-          {/* Word-level tooltips */}
           <div className="mt-2 flex flex-wrap gap-1">
             {segments.map((seg, i) => (
               <WordTooltip key={i} text={seg.english} japaneseText={seg.hiragana} />

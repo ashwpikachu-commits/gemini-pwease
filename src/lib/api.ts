@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import type { StudySession, StudySessionInput, PracticeSession, PracticeSessionInput } from "./types";
+import type { StudySession, StudySessionInput, PracticeSession, PracticeSessionInput, RegularTest, RegularTestInput } from "./types";
 import { computeNextForInput } from "./spacedRepetition";
 
 export async function fetchAllSessions(): Promise<StudySession[]> {
@@ -76,4 +76,36 @@ export async function insertPracticeSession(
   if (error) throw new Error(error.message);
   if (!data) throw new Error("Insert returned no data");
   return data as PracticeSession;
+}
+
+export async function fetchRegularTests(studentId: string): Promise<RegularTest[]> {
+  const { data, error } = await supabase
+    .from("regular_tests")
+    .select("*")
+    .eq("student_id", studentId)
+    .order("studied_at", { ascending: true });
+  if (error) throw new Error(error.message);
+  return (data ?? []) as RegularTest[];
+}
+
+export async function insertRegularTest(
+  input: RegularTestInput
+): Promise<RegularTest> {
+  const row = {
+    student_id: input.student_id,
+    test_number: input.test_number,
+    topic: input.topic,
+    score: input.score,
+    accuracy_pct: input.accuracy_pct ?? 0,
+    duration_seconds: input.duration_seconds ?? 0,
+    question_count: input.question_count ?? 0,
+  };
+  const { data, error } = await supabase
+    .from("regular_tests")
+    .insert(row)
+    .select()
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error("Insert returned no data");
+  return data as RegularTest;
 }

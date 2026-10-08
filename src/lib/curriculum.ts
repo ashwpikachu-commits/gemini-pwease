@@ -99,7 +99,7 @@ export const CURRICULUM: DayCurriculum[] = [
         english: "This is sushi",
         segments: [
           { romaji: "ko re", hiragana: "これ", english: "this" },
-          { romaji: "wa", hiragana: "は", english: "topic marker" },
+          { romaji: "wa", hiragana: "は", english: "marker - topic" },
           { romaji: "su shi", hiragana: "すし", english: "sushi" },
           { romaji: "de su", hiragana: "です", english: "is" },
         ],
@@ -110,7 +110,7 @@ export const CURRICULUM: DayCurriculum[] = [
         english: "Is this sushi?",
         segments: [
           { romaji: "ko re", hiragana: "これ", english: "this" },
-          { romaji: "wa", hiragana: "は", english: "topic marker" },
+          { romaji: "wa", hiragana: "は", english: "marker - topic" },
           { romaji: "su shi", hiragana: "すし", english: "sushi" },
           { romaji: "de su ka", hiragana: "ですか", english: "is it?" },
         ],
@@ -150,7 +150,7 @@ export const CURRICULUM: DayCurriculum[] = [
         english: "This is sushi",
         segments: [
           { romaji: "ko re", hiragana: "これ", english: "this" },
-          { romaji: "wa", hiragana: "は", english: "topic marker" },
+          { romaji: "wa", hiragana: "は", english: "marker - topic" },
           { romaji: "su shi", hiragana: "すし", english: "sushi" },
           { romaji: "de su", hiragana: "です", english: "is" },
         ],
@@ -161,7 +161,7 @@ export const CURRICULUM: DayCurriculum[] = [
         english: "Sushi is delicious",
         segments: [
           { romaji: "su shi", hiragana: "すし", english: "sushi" },
-          { romaji: "ga", hiragana: "が", english: "subject marker" },
+          { romaji: "ga", hiragana: "が", english: "marker - subject" },
           { romaji: "o i shi i", hiragana: "おいしい", english: "delicious" },
           { romaji: "de su", hiragana: "です", english: "is" },
         ],
@@ -172,9 +172,9 @@ export const CURRICULUM: DayCurriculum[] = [
         english: "I like sushi",
         segments: [
           { romaji: "wa ta shi", hiragana: "わたし", english: "I" },
-          { romaji: "wa", hiragana: "は", english: "topic marker" },
+          { romaji: "wa", hiragana: "は", english: "marker - topic" },
           { romaji: "su shi", hiragana: "すし", english: "sushi" },
-          { romaji: "ga", hiragana: "が", english: "subject marker" },
+          { romaji: "ga", hiragana: "が", english: "marker - subject" },
           { romaji: "su ki", hiragana: "すき", english: "like" },
           { romaji: "de su", hiragana: "です", english: "is" },
         ],
@@ -205,7 +205,7 @@ export const CURRICULUM: DayCurriculum[] = [
         english: "Where is the train station?",
         segments: [
           { romaji: "e ki", hiragana: "えき", english: "station" },
-          { romaji: "wa", hiragana: "は", english: "topic marker" },
+          { romaji: "wa", hiragana: "は", english: "marker - topic" },
           { romaji: "do ko", hiragana: "どこ", english: "where" },
           { romaji: "de su ka", hiragana: "ですか", english: "is it?" },
         ],
@@ -216,9 +216,9 @@ export const CURRICULUM: DayCurriculum[] = [
         english: "The book is here",
         segments: [
           { romaji: "ho n", hiragana: "ほん", english: "book" },
-          { romaji: "wa", hiragana: "は", english: "topic marker" },
+          { romaji: "wa", hiragana: "は", english: "marker - topic" },
           { romaji: "ko ko", hiragana: "ここ", english: "here" },
-          { romaji: "ni", hiragana: "に", english: "location particle" },
+          { romaji: "ni", hiragana: "に", english: "marker - location/direction" },
           { romaji: "a ri ma su", hiragana: "あります", english: "is (exists)" },
         ],
       },
@@ -261,9 +261,9 @@ export const CURRICULUM: DayCurriculum[] = [
         english: "Water and tea, please",
         segments: [
           { romaji: "mi zu", hiragana: "みず", english: "water" },
-          { romaji: "to", hiragana: "と", english: "and" },
+          { romaji: "to", hiragana: "と", english: "marker - and/with" },
           { romaji: "o cha", hiragana: "おちゃ", english: "tea" },
-          { romaji: "o", hiragana: "を", english: "object marker" },
+          { romaji: "o", hiragana: "を", english: "marker - object" },
           { romaji: "ku da sa i", hiragana: "ください", english: "please" },
         ],
       },
@@ -273,7 +273,7 @@ export const CURRICULUM: DayCurriculum[] = [
         english: "Three sushi, please",
         segments: [
           { romaji: "su shi", hiragana: "すし", english: "sushi" },
-          { romaji: "o", hiragana: "を", english: "object marker" },
+          { romaji: "o", hiragana: "を", english: "marker - object" },
           { romaji: "sa n", hiragana: "さん", english: "three" },
           { romaji: "ko", hiragana: "こ", english: "counter" },
           { romaji: "ku da sa i", hiragana: "ください", english: "please" },
@@ -307,7 +307,7 @@ export const CURRICULUM: DayCurriculum[] = [
         english: "This is water",
         segments: [
           { romaji: "ko re", hiragana: "これ", english: "this" },
-          { romaji: "wa", hiragana: "は", english: "topic marker" },
+          { romaji: "wa", hiragana: "は", english: "marker - topic" },
           { romaji: "mi zu", hiragana: "みず", english: "water" },
           { romaji: "de su", hiragana: "です", english: "is" },
         ],
@@ -319,7 +319,7 @@ export const CURRICULUM: DayCurriculum[] = [
         segments: [
           { romaji: "su mi ma se n", hiragana: "すみません", english: "excuse me" },
           { romaji: "e ki", hiragana: "えき", english: "station" },
-          { romaji: "wa", hiragana: "は", english: "topic marker" },
+          { romaji: "wa", hiragana: "は", english: "marker - topic" },
           { romaji: "do ko", hiragana: "どこ", english: "where" },
           { romaji: "de su ka", hiragana: "ですか", english: "is it?" },
         ],
@@ -330,9 +330,9 @@ export const CURRICULUM: DayCurriculum[] = [
         english: "I like tea",
         segments: [
           { romaji: "wa ta shi", hiragana: "わたし", english: "I" },
-          { romaji: "wa", hiragana: "は", english: "topic marker" },
+          { romaji: "wa", hiragana: "は", english: "marker - topic" },
           { romaji: "o cha", hiragana: "おちゃ", english: "tea" },
-          { romaji: "ga", hiragana: "が", english: "subject marker" },
+          { romaji: "ga", hiragana: "が", english: "marker - subject" },
           { romaji: "su ki", hiragana: "すき", english: "like" },
           { romaji: "de su", hiragana: "です", english: "is" },
         ],
@@ -343,9 +343,9 @@ export const CURRICULUM: DayCurriculum[] = [
         english: "Will you drink sake?",
         segments: [
           { romaji: "o sa ke", hiragana: "おさけ", english: "sake" },
-          { romaji: "o", hiragana: "を", english: "object marker" },
+          { romaji: "o", hiragana: "を", english: "marker - object" },
           { romaji: "no mi ma su", hiragana: "のみます", english: "drink" },
-          { romaji: "ka", hiragana: "か", english: "question" },
+          { romaji: "ka", hiragana: "か", english: "marker - question" },
         ],
       },
     ],
@@ -386,7 +386,7 @@ export const CURRICULUM: DayCurriculum[] = [
         english: "Water, please",
         segments: [
           { romaji: "mi zu", hiragana: "みず", english: "water" },
-          { romaji: "o", hiragana: "を", english: "object marker" },
+          { romaji: "o", hiragana: "を", english: "marker - object" },
           { romaji: "ku da sa i", hiragana: "ください", english: "please" },
         ],
       },
@@ -396,7 +396,7 @@ export const CURRICULUM: DayCurriculum[] = [
         english: "Sushi is delicious",
         segments: [
           { romaji: "su shi", hiragana: "すし", english: "sushi" },
-          { romaji: "ga", hiragana: "が", english: "subject marker" },
+          { romaji: "ga", hiragana: "が", english: "marker - subject" },
           { romaji: "o i shi i", hiragana: "おいしい", english: "delicious" },
           { romaji: "de su", hiragana: "です", english: "is" },
         ],
@@ -407,7 +407,7 @@ export const CURRICULUM: DayCurriculum[] = [
         english: "Where is the train station?",
         segments: [
           { romaji: "e ki", hiragana: "えき", english: "station" },
-          { romaji: "wa", hiragana: "は", english: "topic marker" },
+          { romaji: "wa", hiragana: "は", english: "marker - topic" },
           { romaji: "do ko", hiragana: "どこ", english: "where" },
           { romaji: "de su ka", hiragana: "ですか", english: "is it?" },
         ],
@@ -418,9 +418,9 @@ export const CURRICULUM: DayCurriculum[] = [
         english: "I like tea",
         segments: [
           { romaji: "wa ta shi", hiragana: "わたし", english: "I" },
-          { romaji: "wa", hiragana: "は", english: "topic marker" },
+          { romaji: "wa", hiragana: "は", english: "marker - topic" },
           { romaji: "o cha", hiragana: "おちゃ", english: "tea" },
-          { romaji: "ga", hiragana: "が", english: "subject marker" },
+          { romaji: "ga", hiragana: "が", english: "marker - subject" },
           { romaji: "su ki", hiragana: "すき", english: "like" },
           { romaji: "de su", hiragana: "です", english: "is" },
         ],
@@ -431,7 +431,7 @@ export const CURRICULUM: DayCurriculum[] = [
         english: "This is a book",
         segments: [
           { romaji: "ko re", hiragana: "これ", english: "this" },
-          { romaji: "wa", hiragana: "は", english: "topic marker" },
+          { romaji: "wa", hiragana: "は", english: "marker - topic" },
           { romaji: "ho n", hiragana: "ほん", english: "book" },
           { romaji: "de su", hiragana: "です", english: "is" },
         ],

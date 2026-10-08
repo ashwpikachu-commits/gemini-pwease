@@ -356,13 +356,17 @@ export function generatePracticeQuestions(
 
 export function scoreLesson(
   questions: LessonQuestion[],
-  answers: Record<string, number>
+  answers: Record<string, number>,
+  skippedIds?: Set<string>
 ): { correct: number; total: number; percentage: number; sm2Score: number } {
   let correct = 0;
+  let total = 0;
+  const skipped = skippedIds ?? new Set<string>();
   for (const q of questions) {
+    if (skipped.has(q.id)) continue;
+    total++;
     if (answers[q.id] === q.correctIndex) correct++;
   }
-  const total = questions.length;
   const percentage = total > 0 ? (correct / total) * 100 : 0;
   const sm2Score = Math.min(5, Math.max(0, Math.round((percentage / 100) * 5)));
   return { correct, total, percentage, sm2Score };

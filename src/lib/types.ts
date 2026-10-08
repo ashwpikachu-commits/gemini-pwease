@@ -48,6 +48,29 @@ export interface PracticeSessionInput {
   question_count?: number;
 }
 
+export interface RegularTest {
+  id: string;
+  student_id: string;
+  test_number: number;
+  topic: string;
+  score: number;
+  accuracy_pct: number;
+  duration_seconds: number;
+  question_count: number;
+  studied_at: string;
+  created_at: string;
+}
+
+export interface RegularTestInput {
+  student_id: string;
+  test_number: number;
+  topic: string;
+  score: number;
+  accuracy_pct?: number;
+  duration_seconds?: number;
+  question_count?: number;
+}
+
 export interface TopicState {
   student_id: string;
   topic: string;

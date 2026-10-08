@@ -2,13 +2,23 @@ import { useMemo, useState } from "react";
 import { Map as MapIcon, CheckCircle2, Lock, Star, Play, Trophy, ClipboardCheck } from "lucide-react";
 import { CURRICULUM } from "@/lib/curriculum";
 import type { DayCurriculum } from "@/lib/curriculum";
-import type { StudySession, StudySessionInput } from "@/lib/types";
+import type { StudySession, StudySessionInput, RegularTest } from "@/lib/types";
 import LessonRunner from "./LessonRunner";
 
 interface Props {
   onAdd: (input: StudySessionInput) => Promise<void>;
   sessions: StudySession[];
+  regularTests: RegularTest[];
   studentId: string;
+  onAddTest?: (input: {
+    student_id: string;
+    test_number: number;
+    topic: string;
+    score: number;
+    accuracy_pct: number;
+    duration_seconds: number;
+    question_count: number;
+  }) => Promise<void>;
 }
 
 type TestNode = {
@@ -38,7 +48,7 @@ function getPathNodes(): PathNode[] {
   return nodes;
 }
 
-export default function LearningPath({ onAdd, sessions, studentId }: Props) {
+export default function LearningPath({ onAdd, sessions, regularTests, studentId, onAddTest }: Props) {
   const [activeDay, setActiveDay] = useState<DayCurriculum | null>(null);
   const [showCompletion, setShowCompletion] = useState(false);
 
@@ -54,12 +64,14 @@ export default function LearningPath({ onAdd, sessions, studentId }: Props) {
         completed.add(day);
         completionDates[day] ??= session.studied_at.slice(0, 10);
       }
-      const testMatch = session.topic.match(/Regular Test (\d+)/);
-      if (testMatch) completedTests.add(Number(testMatch[1]));
+    }
+
+    for (const test of regularTests) {
+      completedTests.add(test.test_number);
     }
 
     return { completed, completionDates, completedTests };
-  }, [sessions]);
+  }, [sessions, regularTests]);
 
   const dayAvailability = useMemo(() => {
     const today = localDateString();
@@ -117,6 +129,7 @@ export default function LearningPath({ onAdd, sessions, studentId }: Props) {
         onAdd={onAdd}
         onExit={() => setActiveDay(null)}
         onComplete={() => setShowCompletion(true)}
+        onAddTest={onAddTest}
       />
     );
   }

@@ -27,6 +27,15 @@ interface Props {
   sessions: StudySession[];
   studentId: string;
   onAdd: (input: StudySessionInput) => Promise<void>;
+  onAddPractice?: (input: {
+    student_id: string;
+    topic: string;
+    score: number;
+    accuracy_pct: number;
+    duration_seconds: number;
+    days_included: string;
+    question_count: number;
+  }) => Promise<void>;
 }
 
 type PracticeSection = "quiz" | "chart" | "particles";
@@ -97,7 +106,7 @@ function combineDays(days: DayCurriculum[]): DayCurriculum {
   };
 }
 
-export default function PracticeView({ sessions, studentId, onAdd }: Props) {
+export default function PracticeView({ sessions, studentId, onAdd, onAddPractice }: Props) {
   const [section, setSection] = useState<PracticeSection>("quiz");
   const [activeDay, setActiveDay] = useState<DayCurriculum | null>(null);
   const [defaultMixed, setDefaultMixed] = useState(true);
@@ -136,6 +145,7 @@ export default function PracticeView({ sessions, studentId, onAdd }: Props) {
         missedKeys={missedKeys}
         selectedDays={defaultMixed ? undefined : selectedDays}
         questionCount={questionCount}
+        onAddPractice={onAddPractice}
       />
     );
   }

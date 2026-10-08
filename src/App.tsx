@@ -13,7 +13,7 @@ import {
   Eye,
   EyeOff,
 } from "lucide-react";
-import type { StudySession, StudySessionInput, TopicState } from "@/lib/types";
+import type { StudySession, StudySessionInput, TopicState, RegularTest } from "@/lib/types";
 import { buildTopicState } from "@/lib/spacedRepetition";
 import { downloadCsv } from "@/lib/csv";
 import { getLoggedInStudentId, logoutStudent, isAdminMode, setAdminMode } from "@/lib/auth";
@@ -28,13 +28,32 @@ type Tab = "path" | "practice" | "schedule" | "retention" | "sessions" | "stats"
 
 interface Props {
   sessions: StudySession[];
+  regularTests: RegularTest[];
   loading: boolean;
   error: string | null;
   onAdd: (input: StudySessionInput) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
+  onAddPractice?: (input: {
+    student_id: string;
+    topic: string;
+    score: number;
+    accuracy_pct: number;
+    duration_seconds: number;
+    days_included: string;
+    question_count: number;
+  }) => Promise<void>;
+  onAddTest?: (input: {
+    student_id: string;
+    test_number: number;
+    topic: string;
+    score: number;
+    accuracy_pct: number;
+    duration_seconds: number;
+    question_count: number;
+  }) => Promise<void>;
 }
 
-export default function App({ sessions, loading, error, onAdd, onDelete }: Props) {
+export default function App({ sessions, regularTests, loading, error, onAdd, onDelete, onAddPractice, onAddTest }: Props) {
   const [tab, setTab] = useState<Tab>("path");
   const [adminMode, setAdminModeState] = useState(isAdminMode());
   const studentId = getLoggedInStudentId() ?? "";
@@ -181,10 +200,10 @@ export default function App({ sessions, loading, error, onAdd, onDelete }: Props
         ) : (
           <>
             {tab === "path" && (
-              <LearningPath onAdd={onAdd} sessions={studentSessions} studentId={studentId} />
+              <LearningPath onAdd={onAdd} sessions={studentSessions} regularTests={regularTests} studentId={studentId} onAddTest={onAddTest} />
             )}
             {tab === "practice" && (
-              <PracticeView sessions={studentSessions} studentId={studentId} onAdd={onAdd} />
+              <PracticeView sessions={studentSessions} studentId={studentId} onAdd={onAdd} onAddPractice={onAddPractice} />
             )}
             {tab === "schedule" && (
               <ScheduleView topicStates={topicStates} />
